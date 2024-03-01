@@ -2,7 +2,6 @@ package peggame;
 
 public class Move {
     
-    public Location Move;
 
     private Location from;
     public Location getFrom() {

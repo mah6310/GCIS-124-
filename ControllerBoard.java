@@ -8,7 +8,7 @@ import peggame.PegGame.GameState;
 
 public class ControllerBoard {
     public static void playGame(PegGame game) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));//Change
         while (game.getGameState() == GameState.IN_PROGRESS) {
             System.out.println(game);
             System.out.println("Enter your move in the format 'move r1 c1 r2 c2', or 'quit' to quit:");
