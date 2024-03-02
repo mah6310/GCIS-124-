@@ -1,23 +1,27 @@
 package peggame;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class Reader {
-    public static PegGame readGameFromFile(String filename) throws IOException {
+    public static PegGame readGameFromFile(String filename) throws FileNotFoundException {
         File file = new File(filename);
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        int size = Integer.parseInt(br.readLine());
-        SquareBoard game = new SquareBoard(size);
-        for (int i = 0; i < size; i++) {
-            String line = br.readLine();
-            for (int j = 0; j < size; j++) {
-                game.getBoard()[i][j] = line.charAt(j);
+        try (Scanner scanner = new Scanner(file)) {
+            int size = scanner.nextInt();  // Reads the size of the board (first line)
+            scanner.nextLine();  // Consume the remainder of the first line
+
+            char[][] board = new char[size][size];
+            for (int i = 0; i < size; i++) {
+                String line = scanner.nextLine();
+                if (line.length() != size) {
+                    throw new IllegalArgumentException("Each row must contain " + size + " characters.");
+                }
+                for (int j = 0; j < size; j++) {
+                    board[i][j] = line.charAt(j);
+                }
             }
+            return new SquareBoard(board);
         }
-        br.close();
-        return game;
     }
 }

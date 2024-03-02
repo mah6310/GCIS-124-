@@ -1,85 +1,128 @@
 package peggame;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class SquareBoard implements PegGame {
     private char[][] board;
-    private GameState gameState;
-    
-    public char[][] getBoard() {
-        return this.board;
-        }
-    
-    public SquareBoard(int size) {
-        this.board = new char[size][size+1];
-        for (char[] row : board) {
-            Arrays.fill(row, 'o');
-        }
-        this.gameState = GameState.NOT_STARTED;
+
+    public SquareBoard(char[][] cs) {
+        this.board = cs;
     }
 
     @Override
     public Collection<Move> getPossibleMoves() {
-        List<Move> moves = new ArrayList<>();
-        // Iterate over the board
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                // If the current location has a peg
-                if (board[i][j] == 'o') {
-                    // Check all four directions (up, down, left, right)
-                    for (int[] dir : new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) {
-                        int x = i + dir[0], y = j + dir[1];
-                        // If the adjacent location also has a peg
-                        if (x >= 0 && x < board.length && y >= 0 && y < board[i].length && board[x][y] == 'o') {
-                            // Check if the location after that is within the array bounds and is empty
-                            int newX = x + dir[0], newY = y + dir[1];
-                            if (newX >= 0 && newX < board.length && newY >= 0 && newY < board[i].length && board[newX][newY] == '.') {
-                                // Add this move to the list
-                                moves.add(new Move(new Location(i, j), new Location(newX, newY)));
-                            }
+        List<Move> validMoves = new ArrayList<>();
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[row].length; col++) {
+                if (board[row][col] == 'o') { // Found a peg
+                    // Check all four possible directions
+                    int[][] directions = {{-2, 0}, {2, 0}, {0, -2}, {0, 2}};
+                    for (int[] dir : directions) {
+                        int destRow = row + dir[0];
+                        int destCol = col + dir[1];
+                        int jumpedRow = row + dir[0] / 2;
+                        int jumpedCol = col + dir[1] / 2;
+    
+                        if (isValidDestination(destRow, destCol) && board[jumpedRow][jumpedCol] == 'o' && board[destRow][destCol] == '.') {
+                            validMoves.add(new Move(new Location(row, col), new Location(destRow, destCol)));
                         }
                     }
                 }
             }
         }
-        return moves;
+        return validMoves;
+    }
+    
+    private boolean isValidDestination(int row, int col) {
+        return row >= 0 && row < board.length && col >= 0 && col < board[row].length;
     }
     
 
-@Override
-public GameState getGameState() {
-    // Check if there are any possible moves left
-    Collection<Move> possibleMoves = getPossibleMoves();
+    public GameState getGameState() {
+        boolean movesAvailable = !getPossibleMoves().isEmpty();
+        int pegsCount = countPegs();
     
-    // If there are no possible moves left, the game is lost
-    if (possibleMoves.isEmpty()) {
-        return GameState.STALEMATE;
+        if (pegsCount == 1) {
+            return GameState.WON;
+        } else if (movesAvailable) {
+            return GameState.IN_PROGRESS;
+        } else {
+            return GameState.STALEMATE;
+        }
     }
-    // Otherwise, the game is still in progress
-    else {
-        return GameState.IN_PROGRESS;
+    
+    private int countPegs() {
+        int count = 0;
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j] == 'o') {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+
+    @Override
+public void makeMove(Move move) throws PegGameException {
+    int r1 = move.getFrom().getRow();
+    int c1 = move.getFrom().getCol();
+    int r2 = move.getTo().getRow();
+    int c2 = move.getTo().getCol();
+
+    // Check if the move is within the bounds of the board
+    if (!isWithinBounds(r1, c1) || !isWithinBounds(r2, c2)) {
+        throw new PegGameException("Move is out of bounds.");
+    }
+
+    // Check if the move is valid according to the game's rules
+    if (isValidMove(r1, c1, r2, c2)) {
+        // Execute the move
+        board[r1][c1] = '.'; // Set starting position to empty
+        board[(r1 + r2) / 2][(c1 + c2) / 2] = '.'; // Remove the jumped peg
+        board[r2][c2] = 'o'; // Set ending position to contain the peg
+    } else {
+        // Handle an invalid move attempt
+        throw new PegGameException("Invalid move.");
     }
 }
 
-
-@Override
-public void makeMove(Move move) throws PegGameException {
-    Location from = move.getFrom();
-    Location to = move.getTo();
-    // Calculate the mid-point between the 'from' and 'to' locations
-    int midRow = (from.getRow() + to.getRow()) / 2;
-    int midCol = (from.getCol() + to.getCol()) / 2;
-    // Validate the move
-    if (board[from.getRow()][from.getCol()] != 'o' || board[to.getRow()][to.getCol()] != '.' || board[midRow][midCol] != 'o') {
-        throw new PegGameException("Invalid move");
+private boolean isValidMove(int r1, int c1, int r2, int c2) {
+    // Check if the move is within the bounds of the board
+    if (!isWithinBounds(r1, c1) || !isWithinBounds(r2, c2)) {
+        return false;
     }
-    // Make the move
-    board[from.getRow()][from.getCol()] = '.';
-    board[midRow][midCol] = '.';
-    board[to.getRow()][to.getCol()] = 'o';
+
+    // Ensure the move is from a peg to an empty space
+    if (board[r1][c1] != 'o' || board[r2][c2] != '.') {
+        return false;
+    }
+
+    // Calculate the midpoints between the old and new positions
+    int midRow = (r1 + r2) / 2;
+    int midCol = (c1 + c2) / 2;
+
+    // Check if the midpoint has a peg that will be "jumped over"
+    if (board[midRow][midCol] != 'o') {
+        return false;
+    }
+
+    // Ensure that the move is in a straight line and two spaces long
+    if (Math.abs(r1 - r2) != 2 && Math.abs(c1 - c2) != 2) {
+        return false;
+    }
+
+    // Ensure that the move is strictly horizontal or vertical
+    if (r1 != r2 && c1 != c2) {
+        return false;
+    }
+
+    return true;
+}
+
+private boolean isWithinBounds(int row, int col) {
+    return row >= 0 && row < board.length && col >= 0 && col < board[row].length;
 }
 
 
@@ -94,6 +137,9 @@ public void makeMove(Move move) throws PegGameException {
         }
         return sb.toString();
     }
-    
 
+    public char[][] getBoard() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getBoard'");
+    }
 }
