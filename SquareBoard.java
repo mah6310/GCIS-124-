@@ -1,14 +1,28 @@
 package peggame;
 
 import java.util.*;
-
+/**
+ * The SquareBoard class represents a square-shaped peg game board.
+ * It implements the PegGame interface and provides methods to interact with the game board.
+ */
 public class SquareBoard implements PegGame {
-    private char[][] board;
+    
+    private char[][] board; // The 2D array representing the game board
 
-    public SquareBoard(char[][] cs) {
-        this.board = cs;
+    /**
+     * Constructs a new SquareBoard with the specified board configuration.
+     * 
+     * @param board The 2D array representing the game board configuration.
+     */
+    public SquareBoard(char[][] board) {
+        this.board = board;
     }
 
+    /**
+     * Returns a collection of possible moves that can be made in the current game state.
+     * 
+     * @return A collection of possible moves.
+     */
     @Override
     public Collection<Move> getPossibleMoves() {
         List<Move> validMoves = new ArrayList<>();
@@ -33,10 +47,16 @@ public class SquareBoard implements PegGame {
         return validMoves;
     }
     
+    /**
+     * Checks if the specified row and column indices are within the bounds of the game board.
+     * 
+     * @param row The row index.
+     * @param col The column index.
+     * @return true if the indices are within bounds, false otherwise.
+     */
     private boolean isValidDestination(int row, int col) {
         return row >= 0 && row < board.length && col >= 0 && col < board[row].length;
     }
-    
 
     public GameState getGameState() {
         boolean movesAvailable = !getPossibleMoves().isEmpty();
@@ -62,42 +82,40 @@ public class SquareBoard implements PegGame {
         }
         return count;
     }
-    
-
     @Override
-public void makeMove(Move move) throws PegGameException {
-    int r1 = move.getFrom().getRow();
-    int c1 = move.getFrom().getCol();
-    int r2 = move.getTo().getRow();
-    int c2 = move.getTo().getCol();
-
-    // Check if the move is within the bounds of the board
-    if (!isWithinBounds(r1, c1) || !isWithinBounds(r2, c2)) {
-        throw new PegGameException("Move is out of bounds.");
+    public void makeMove(Move move) throws PegGameException {
+        int r1 = move.getFrom().getRow();
+        int c1 = move.getFrom().getCol();
+        int r2 = move.getTo().getRow();
+        int c2 = move.getTo().getCol();
+    
+        // Check if the move is within the bounds of the board
+        if (!isWithinBounds(r1, c1) || !isWithinBounds(r2, c2)) {
+            throw new PegGameException("Move is out of bounds.");
+        }
+    
+        // Check if the move is valid according to the game's rules
+        if (isValidMove(r1, c1, r2, c2)) {
+            // Execute the move
+            board[r1][c1] = '.'; // Set starting position to empty
+            board[(r1 + r2) / 2][(c1 + c2) / 2] = '.'; // Remove the jumped peg
+            board[r2][c2] = 'o'; // Set ending position to contain the peg
+        } else {
+            // Handle an invalid move attempt
+            throw new PegGameException("Invalid move.");
+        }
     }
-
-    // Check if the move is valid according to the game's rules
-    if (isValidMove(r1, c1, r2, c2)) {
-        // Execute the move
-        board[r1][c1] = '.'; // Set starting position to empty
-        board[(r1 + r2) / 2][(c1 + c2) / 2] = '.'; // Remove the jumped peg
-        board[r2][c2] = 'o'; // Set ending position to contain the peg
-    } else {
-        // Handle an invalid move attempt
-        throw new PegGameException("Invalid move.");
-    }
-}
-
-private boolean isValidMove(int r1, int c1, int r2, int c2) {
-    // Check if the move is within the bounds of the board
-    if (!isWithinBounds(r1, c1) || !isWithinBounds(r2, c2)) {
-        return false;
-    }
-
-    // Ensure the move is from a peg to an empty space
-    if (board[r1][c1] != 'o' || board[r2][c2] != '.') {
-        return false;
-    }
+    
+    private boolean isValidMove(int r1, int c1, int r2, int c2) {
+        // Check if the move is within the bounds of the board
+        if (!isWithinBounds(r1, c1) || !isWithinBounds(r2, c2)) {
+            return false;
+        }
+    
+        // Ensure the move is from a peg to an empty space
+        if (board[r1][c1] != 'o' || board[r2][c2] != '.') {
+            return false;
+        }
 
     // Calculate the midpoints between the old and new positions
     int midRow = (r1 + r2) / 2;
@@ -143,3 +161,4 @@ private boolean isWithinBounds(int row, int col) {
         throw new UnsupportedOperationException("Unimplemented method 'getBoard'");
     }
 }
+    
