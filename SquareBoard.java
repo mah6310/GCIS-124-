@@ -50,8 +50,8 @@ public class SquareBoard implements PegGame {
     /**
      * Checks if the specified row and column indices are within the bounds of the game board.
      * 
-     * @param row The row index.
-     * @param col The column index.
+     * row --> row index.
+     * col --> The column index.
      * @return true if the indices are within bounds, false otherwise.
      */
     private boolean isValidDestination(int row, int col) {
@@ -82,6 +82,7 @@ public class SquareBoard implements PegGame {
         }
         return count;
     }
+    
     @Override
     public void makeMove(Move move) throws PegGameException {
         int r1 = move.getFrom().getRow();
@@ -116,49 +117,45 @@ public class SquareBoard implements PegGame {
         if (board[r1][c1] != 'o' || board[r2][c2] != '.') {
             return false;
         }
-
-    // Calculate the midpoints between the old and new positions
-    int midRow = (r1 + r2) / 2;
-    int midCol = (c1 + c2) / 2;
-
-    // Check if the midpoint has a peg that will be "jumped over"
-    if (board[midRow][midCol] != 'o') {
-        return false;
-    }
-
-    // Ensure that the move is in a straight line and two spaces long
-    if (Math.abs(r1 - r2) != 2 && Math.abs(c1 - c2) != 2) {
-        return false;
-    }
-
-    // Ensure that the move is strictly horizontal or vertical
-    if (r1 != r2 && c1 != c2) {
-        return false;
-    }
-
-    return true;
-}
-
-private boolean isWithinBounds(int row, int col) {
-    return row >= 0 && row < board.length && col >= 0 && col < board[row].length;
-}
-
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (char[] row : board) {
-            for (char c : row) {
-                sb.append(c);
-            }
-            sb.append('\n');
-        }
-        return sb.toString();
-    }
-
-    public char[][] getBoard() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBoard'");
-    }
-}
     
+        // Calculate the midpoints between the old and new positions
+        int midRow = (r1 + r2) / 2;
+        int midCol = (c1 + c2) / 2;
+    
+        // Check if the midpoint has a peg that will be "jumped over"
+        if (board[midRow][midCol] != 'o') {
+            return false;
+        }
+    
+        // Ensure that the move is in a straight line and two spaces long
+        if (Math.abs(r1 - r2) != 2 && Math.abs(c1 - c2) != 2) {
+            return false;
+        }
+    
+        // Ensure that the move is strictly horizontal or vertical
+        if (r1 != r2 && c1 != c2) {
+            return false;
+        }
+        return true;
+    }
+    
+
+    private boolean isWithinBounds(int row, int col) {
+        return row >= 0 && row < board.length && col >= 0 && col < board[row].length;
+    }
+
+@Override
+public String toString() {
+    String result = "";
+
+    for (char[] row : board) {
+        for (char cell : row) {
+            result += (cell == '.' ? '-' : cell);
+        }
+        result += '\n';
+    }
+
+    return result;
+}
+
+}
