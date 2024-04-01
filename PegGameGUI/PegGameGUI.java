@@ -27,6 +27,7 @@ public class PegGameGUI extends Application {
     private Label stateLabel = new Label("State: " + gameState);
     private Circle emptyPeg;
     private Circle startPeg = null;
+    private Color startPegOriginalColor;
 
     @Override
     public void start(Stage primaryStage) {
@@ -100,9 +101,13 @@ public class PegGameGUI extends Application {
             // If no start peg has been selected yet, set the clicked peg as the start peg
             if (((Color) clickedPeg.getFill()).equals(Color.RED)) {
                 startPeg = clickedPeg;
+                startPegOriginalColor = (Color) startPeg.getFill();
+                startPeg.setFill(Color.BLUE); // Change the color of the selected peg
             }
         } else {
             // If a start peg has already been selected, treat the clicked peg as the end location
+            startPeg.setFill(startPegOriginalColor); // Reset the color of the start peg
+    
             int startX = -1, startY = -1;
             for (int i = 0; i < pegs.length; i++) {
                 for (int j = 0; j < pegs[i].length; j++) {
