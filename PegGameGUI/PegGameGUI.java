@@ -12,11 +12,13 @@ import javafx.scene.shape.Circle;
 import javafx.scene.paint.Color;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
-import peggame.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+
 
 public class PegGameGUI extends Application {
 
@@ -60,14 +62,35 @@ public class PegGameGUI extends Application {
 
         root.add(stateLabel, 0, 5);
 
-        TextField saveField = new TextField();
+        TextField saveField = new TextField("Enter save file name here (.txt), then press Save :");
         root.add(saveField, 1, 5);
 
-        Button saveButton = new Button("Save");
-        saveButton.setOnAction(e -> {
-            // Save game state to file
-            System.out.println("Saving game to " + saveField.getText());
-        });
+    Button saveButton = new Button("Save");
+    saveButton.setOnAction(e -> {
+        // Save game state to file
+        String filename = saveField.getText();
+        if (!filename.endsWith(".txt")) {
+            filename += ".txt";
+        }
+        try (FileWriter writer = new FileWriter(filename)) {
+            // Write the size of the board
+            writer.write(pegs.length + "\n");
+            // Write the state of each peg
+            for (int i = 0; i < pegs.length; i++) {
+                for (int j = 0; j < pegs[i].length; j++) {
+                    if (((Color) pegs[i][j].getFill()).equals(Color.RED)) {
+                        writer.write('o');
+                    } else {
+                        writer.write('.');
+                    }
+                }
+                writer.write("\n");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        System.out.println("Saving game to " + filename);
+    });
         root.add(saveButton, 2, 5);
 
         Scene scene = new Scene(root, 600, 600);
@@ -81,6 +104,18 @@ public class PegGameGUI extends Application {
             System.out.println("Closing the game");
             System.exit(0);
         });
+    }
+
+    private int countPegs() {
+        int count = 0;
+        for (int i = 0; i < pegs.length; i++) {
+            for (int j = 0; j < pegs[i].length; j++) {
+                if (((Color) pegs[i][j].getFill()).equals(Color.RED)) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private void handlePegClick(MouseEvent e) {
@@ -103,11 +138,13 @@ public class PegGameGUI extends Application {
                 startPeg = clickedPeg;
                 startPegOriginalColor = (Color) startPeg.getFill();
                 startPeg.setFill(Color.BLUE); // Change the color of the selected peg
+    
+                // Update the game state to IN_PROGRESS as soon as a peg is clicked
+                gameState = State.IN_PROGRESS;
+                stateLabel.setText("State: " + gameState);
             }
         } else {
             // If a start peg has already been selected, treat the clicked peg as the end location
-            startPeg.setFill(startPegOriginalColor); // Reset the color of the start peg
-    
             int startX = -1, startY = -1;
             for (int i = 0; i < pegs.length; i++) {
                 for (int j = 0; j < pegs[i].length; j++) {
@@ -130,17 +167,22 @@ public class PegGameGUI extends Application {
     
                 // Check if the overPeg is a peg and not an empty space
                 if (((Color) overPeg.getFill()).equals(Color.RED)) {
-                    // Swap the start peg and the clicked peg
-                    Color tempColor = (Color) startPeg.getFill();
-                    startPeg.setFill(clickedPeg.getFill());
-                    clickedPeg.setFill(tempColor);
-    
                     // The peg that was jumped over becomes the new empty peg
                     overPeg.setFill(Color.BLACK);
                     emptyPeg = overPeg;
     
+                    // The start peg becomes an empty space
+                    startPeg.setFill(Color.BLACK);
+    
+                    // The clicked peg becomes a red peg
+                    clickedPeg.setFill(Color.RED);
+    
                     // Update the game state
-                    gameState = State.IN_PROGRESS;
+                    if (countPegs() == 1) {
+                        gameState = State.WON;
+                    } else {
+                        gameState = State.IN_PROGRESS;
+                    }
                     stateLabel.setText("State: " + gameState);
                 }
             }
@@ -149,7 +191,6 @@ public class PegGameGUI extends Application {
             startPeg = null;
         }
     }
-    
     
 
     public static void main(String[] args) {
