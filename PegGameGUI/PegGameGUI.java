@@ -1,10 +1,13 @@
 package PegGameGUI;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -18,7 +21,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-
 
 public class PegGameGUI extends Application {
 
@@ -34,31 +36,42 @@ public class PegGameGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         GridPane root = new GridPane();
+
+        root.setAlignment(Pos.CENTER);
+
         root.setHgap(0);
         root.setVgap(0);
+
         root.setPadding(new Insets(0, 0, 0, 0));
-        // Use a FileChooser to get the file name from the user
-        FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(primaryStage);
-        if (file != null) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                int size = Integer.parseInt(reader.readLine());
-                pegs = new Circle[size][size];
-                for (int i = 0; i < size; i++) {
-                    String line = reader.readLine();
-                    for (int j = 0; j < size; j++) {
-                        pegs[i][j] = new Circle(30, line.charAt(j) == 'o' ? Color.RED : Color.BLACK);
-                        pegs[i][j].setOnMouseClicked(e -> handlePegClick(e));
-                        root.add(pegs[i][j], i, j);
-                        if (line.charAt(j) == '.') {
-                            emptyPeg = pegs[i][j];
-                        }
-                    }
+root.setHgap(0); // Set horizontal gap to 0
+root.setVgap(0); // Set vertical gap to 0
+
+// Use a FileChooser to get the file name from the user
+FileChooser fileChooser = new FileChooser();
+File file = fileChooser.showOpenDialog(primaryStage);
+if (file != null) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        int size = Integer.parseInt(reader.readLine());
+        pegs = new Circle[size][size];
+        for (int i = 0; i < size; i++) {
+            String line = reader.readLine();
+            for (int j = 0; j < size; j++) {
+                pegs[i][j] = new Circle(30, line.charAt(j) == 'o' ? Color.RED : Color.BLACK);
+                pegs[i][j].setOnMouseClicked(e -> handlePegClick(e));
+                root.add(pegs[i][j], i, j);
+                GridPane.setFillWidth(pegs[i][j], true); 
+                GridPane.setFillHeight(pegs[i][j], true); 
+                GridPane.setHgrow(pegs[i][j], Priority.ALWAYS); 
+                GridPane.setVgrow(pegs[i][j], Priority.ALWAYS);
+                if (line.charAt(j) == '.') {
+                    emptyPeg = pegs[i][j];
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
 
         root.add(stateLabel, 0, 5);
 
@@ -92,6 +105,12 @@ public class PegGameGUI extends Application {
         System.out.println("Saving game to " + filename);
     });
         root.add(saveButton, 2, 5);
+
+        Button closeButton = new Button("Press to Close");
+        closeButton.setOnAction(e -> {
+    // Close the current window
+        primaryStage.close();});
+        root.add(closeButton, 3, 5);
 
         Scene scene = new Scene(root, 600, 600);
 
@@ -132,18 +151,16 @@ public class PegGameGUI extends Application {
             }
         }
     
-        if (startPeg == null) {
-            // If no start peg has been selected yet, set the clicked peg as the start peg
-            if (((Color) clickedPeg.getFill()).equals(Color.RED)) {
-                startPeg = clickedPeg;
-                startPegOriginalColor = (Color) startPeg.getFill();
-                startPeg.setFill(Color.BLUE); // Change the color of the selected peg
+        // If no start peg has been selected yet, set the clicked peg as the start peg
+        if (startPeg == null && ((Color) clickedPeg.getFill()).equals(Color.RED)) {
+            startPeg = clickedPeg;
+            startPegOriginalColor = (Color) startPeg.getFill();
+            startPeg.setFill(Color.BLUE); // Change the color of the selected peg
     
-                // Update the game state to IN_PROGRESS as soon as a peg is clicked
-                gameState = State.IN_PROGRESS;
-                stateLabel.setText("State: " + gameState);
-            }
-        } else {
+            // Update the game state to IN_PROGRESS as soon as a peg is clicked
+            gameState = State.IN_PROGRESS;
+            stateLabel.setText("State: " + gameState);
+        } else if (startPeg != null) {
             // If a start peg has already been selected, treat the clicked peg as the end location
             int startX = -1, startY = -1;
             for (int i = 0; i < pegs.length; i++) {
@@ -169,7 +186,6 @@ public class PegGameGUI extends Application {
                 if (((Color) overPeg.getFill()).equals(Color.RED)) {
                     // The peg that was jumped over becomes the new empty peg
                     overPeg.setFill(Color.BLACK);
-                    emptyPeg = overPeg;
     
                     // The start peg becomes an empty space
                     startPeg.setFill(Color.BLACK);
@@ -185,12 +201,17 @@ public class PegGameGUI extends Application {
                     }
                     stateLabel.setText("State: " + gameState);
                 }
-            }
     
-            // Reset the start peg
-            startPeg = null;
+                // Reset the start peg
+                startPeg = null;
+            } else {
+                // If the move is not valid, reset the color of the start peg and clear the start peg
+                startPeg.setFill(startPegOriginalColor);
+                startPeg = null;
+            }
         }
     }
+    
     
 
     public static void main(String[] args) {
